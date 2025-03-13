@@ -29,3 +29,4 @@ Route::group([
     Route::delete("staffs". "/{id}",[StaffController::class,"destroy"]);
 });
 
+// Rutas libres:
