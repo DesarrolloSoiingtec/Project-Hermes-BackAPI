@@ -14,11 +14,19 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            EconomicActivitiesSeeder::class,
+        ]);
+        $this->call([
+            LegalDocumentsTypesSeeder::class,
+        ]);
+        $this->call([
+            CiuuCodesSeeder::class,
+        ]);
+        $this->call([
             PermissionsDemoSeeder::class,
         ]);
-
         $this->call([
-            IdentityDocumentsSeeder::class,
+            CountriesSeeder::class,
         ]);
     }
 }

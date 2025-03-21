@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Auth\Person;
 use App\Models\User;
 use App\Models\LoginLog;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 
 class AuthController extends Controller
@@ -45,17 +47,15 @@ class AuthController extends Controller
      */
     public function login()
     {
+        // Obtenemos las credenciales de email y password desde la request.
         $credentials = request(['email', 'password']);
 
-        if (! $token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        // Agregamos la condición de que el usuario debe estar activo.
+        $credentials['is_active'] = true;
 
-        $Log = LoginLog::create([
-            'user_id' => auth()->id(),
-            'ip_address' => request()->ip,
-            'browser' => request()->browser
-        ]);
+        if (! $token = auth()->attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized or inactive account'], 401);
+        }
 
         return $this->respondWithToken($token);
     }
@@ -105,18 +105,35 @@ class AuthController extends Controller
             return $permission->name;
         });
 
+        $baseUrl = rtrim(env("APP_URL"), '/');
+        $avatar = auth('api')->user()->avatar;
+        if ($avatar) {
+            if (substr($avatar, 0, 8) === '/storage') {
+                $avatar_url = $baseUrl . $avatar;
+            } else {
+                $avatar_url = $baseUrl . "/storage/" . $avatar;
+            }
+        } else {
+            $avatar_url = null;
+        }
+
+        // Modelo personas
+        $userId = auth('api')->user()->id;
+        $person = Person::findOrFail($userId);
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60,
             "User" => [
                 "id" => auth('api')->user()->id,
-                "name" => auth('api')->user()->name,
-                "lastname" => auth('api')->user()->lastName,
                 "email" => auth('api')->user()->email,
-                "avatar" => auth('api')->user()->avatar ? env("APP_URL")."storage/".auth('api')->user()->avatar : null,
+                "avatar_url" => $avatar_url,
                 "role" => auth('api')->user()->role,
-                "permissions" => $permissions
+                "is_active" => auth('api')->user()->is_active,
+                "permissions" => $permissions,
+                "name" =>  $person->name,
+                "lastname" =>  $person->lastname,
             ]
         ]);
     }

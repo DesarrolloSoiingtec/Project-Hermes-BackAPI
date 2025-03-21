@@ -11,6 +11,8 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Permission\Models\Role;
 
+use App\Models\Auth\Person;
+
 class User extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;

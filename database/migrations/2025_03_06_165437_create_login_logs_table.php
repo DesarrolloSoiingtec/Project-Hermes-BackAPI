@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('login_logs', function (Blueprint $table) {
             $table->id();
             // Relación con el usuario (puede ser nullable para log de intentos anónimos)
-            $table->foreignId('user_id')->nullable()->constrained();
+
+            $table->bigInteger('user_id'); // ID del user llave foranea
+            $table->foreign('user_id')->references('id')->on('users');
+
             // Almacena la dirección IP (45 caracteres para soportar IPv6)
             $table->string('ip_address', 45);
             // Guarda el agente de usuario (opcional)

@@ -34,6 +34,7 @@ class UserResource extends JsonResource
             "phone"=> $this->resource->phone,
             "designation"=> $this->resource->designation,
             "birthday" => $this->resource->birthday ? Carbon::parse($this->resource->birthday)->format("Y/m/d") : null,
+            "is_active" => $this->resource->is_active,
         ];
     }
 }

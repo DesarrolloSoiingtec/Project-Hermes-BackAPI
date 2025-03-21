@@ -28,7 +28,7 @@ class StoreStaffRequest extends FormRequest
             'email'            => 'required|email|max:255|unique:users,email',
             'phone'            => 'required|string|max:20',
             'type_document'    => 'nullable|string|max:50',
-            'document_number'  => 'nullable|string|max:50|unique:users,document_number',
+            'document_number'  => 'nullable|string|max:50',
             'gender'           => 'required|in:M,F',
             'birthday'         => 'nullable|date',
             'role_id'          => 'required|exists:roles,id',

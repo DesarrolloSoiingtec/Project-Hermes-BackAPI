@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Rol;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
+
 
 class RoleController extends Controller
 {

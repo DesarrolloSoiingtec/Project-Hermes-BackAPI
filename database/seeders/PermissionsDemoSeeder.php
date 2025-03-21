@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use App\Models\Auth\Person;
 use App\Models\User;
 
 class PermissionsDemoSeeder extends Seeder
@@ -16,7 +17,7 @@ class PermissionsDemoSeeder extends Seeder
         // Reinicia la caché de roles y permisos
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         //dashboard
-        Permission::create(['guard_name' => 'api', 'name' => 'view_dashboard']);
+        Permission::create(['guard_name' => 'api', 'name' => 'all']);
 
         // Permisos para Usuarios
         Permission::create(['guard_name' => 'api', 'name' => 'view_user']);
@@ -30,6 +31,9 @@ class PermissionsDemoSeeder extends Seeder
         Permission::create(['guard_name' => 'api', 'name' => 'edit_role']);
         Permission::create(['guard_name' => 'api', 'name' => 'delete_role']);
 
+        // Chat
+        Permission::create(['guard_name' => 'api', 'name' => 'view_chat']);
+
         // Creación del rol Administrador y asignación de permisos
         $adminRole = Role::create(['guard_name' => 'api', 'name' => 'Administrador']);
         $adminRole->givePermissionTo(Permission::all());
@@ -37,38 +41,30 @@ class PermissionsDemoSeeder extends Seeder
         // Creación del rol Usuario y asignación de permisos de solo vista
         $userRole = Role::create(['guard_name' => 'api', 'name' => 'Usuario']);
         $userRole->givePermissionTo([
-            'view_dashboard',
+            'all',
         ]);
 
-        // Creación del usuario administrador y asignación del rol
-        $user = User::factory()->create([
-            'name'     => 'System',
-            'email'    => 'admin@admin.com',
-            'lastname' => 'Admin',
-            'phone'    => '3102225093',
-            'type_document' => 'CC',
-            'document_number' => '1234567890',
-            'birthday' => '1990-01-01',
-            'gender' => 'M',
-            'role_id'  => 1,
-            'password' => bcrypt('qwerty'),
-        ]);
+        $user = new User();
+        //$user->id = 'f3fdbafe-5da8-49f9-9b1f-e6ad1dedfdb4';
+        $user->email = 'admin@admin.com';
+        $user->password = bcrypt('qwerty');
+        $user->role_id = 1;
+        $user->save();
+
+
+        $person = new Person();
+        $person->id = $user->id;
+        $person->name = 'System';
+        $person->document_number = '1098555293';
+        $person->lastname = 'Admin';
+        $person->phone = '3102225093';
+        $person->legal_document_type_id = 13;
+        $person->birthday = '1990-01-01';
+        $person->gender = 'M';
+        $person->save();
+
         $user->assignRole($adminRole);
 
-        // Creación del usuario con permisos de solo vista y asignación del rol
-        $viewUser = User::factory()->create([
-            'name'     => 'ViewOnly',
-            'email'    => 'viewonly@user.com',
-            'lastname' => 'User',
-            'phone'    => '3102225094',
-            'type_document' => 'CC',
-            'document_number' => '0987654321',
-            'birthday' => '1995-01-01',
-            'gender' => 'F',
-            'role_id'  => 2,
-            'password' => bcrypt('qwerty'),
-        ]);
-        $viewUser->assignRole($userRole);
 
     }
 
