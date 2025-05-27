@@ -23,6 +23,8 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
+    protected $guard_name = 'api';
+
     protected $fillable = [
         'id',
         'name',

@@ -23,10 +23,22 @@ class DatabaseSeeder extends Seeder
             CiuuCodesSeeder::class,
         ]);
         $this->call([
+            CountriesSeeder::class,
+        ]);
+        $this->call([
+            SpecialtiesSeeder::class,
+        ]);
+        $this->call([
+            ConceptsServicesSeeder::class,
+        ]);
+        $this->call([
             PermissionsDemoSeeder::class,
         ]);
         $this->call([
-            CountriesSeeder::class,
+            BranchSeeder::class,
+        ]);
+        $this->call([
+            UserSeeder::class,
         ]);
     }
 }

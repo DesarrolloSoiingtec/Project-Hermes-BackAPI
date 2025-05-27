@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreign('legal_document_type_id')->references('id')->on('legal_documents_types');
 
             $table->string('document_number', 30); // Número de documento
+            $table->string('email_patient', 60)->nullable(); // correo del paciente (opcional)
             $table->string('name', 80); // Primer nombre
             $table->string('second_name', 80)->nullable(); // Segundo nombre (opcional)
             $table->string('lastname', 80); // Primer apellido
@@ -25,15 +26,14 @@ return new class extends Migration
             $table->string('address', 128)->nullable(); // Dirección (Cra, calle, diagonal, etc)
             $table->string('prefix_phone', 5)->nullable(); // Prefijo del teléfono de contacto -----> debe venir de la tabla "global_prefixes"
             $table->string('phone', 18)->nullable(); // Teléfono de contacto (opcional)
-            $table->string('photo')->nullable(); // Foto (opcional)
-            $table->string('fingerprint')->nullable(); // Huella digital (opcional)
             $table->date('birthday')->nullable(); // Fecha de nacimiento
             $table->string('gender', 1); // Género
             $table->string('municipality', 100)->nullable(); // Municipio de la dirección (opcional)
             $table->string('department', 100)->nullable(); // Departamento de la dirección (opcional) (en Colombia, se usa "departamento" en lugar de "estado")
             $table->string('zone', 1)->comment('(R)ural - (U)rbano')->nullable(); // Zona (Rural o Urbano) (opcional)
-            $table->integer('country_origin')->nullable(); // País de origen (opcional)
-            $table->integer('country_residence')->nullable(); // País de residencia (opcional)
+            $table->string('country_origin', 2)->nullable(); // País de origen (opcional)
+            $table->string('country_residence', 2)->nullable(); // País de residencia (opcional)
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
         });

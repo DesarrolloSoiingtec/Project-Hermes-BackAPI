@@ -10,7 +10,7 @@ use App\Models\Other\LegalDocumentsType;
 class LegalDocumentController extends Controller
 {
     public function getDocuments(){
-        $documents = LegalDocumentsType::select('name')
+        $documents = LegalDocumentsType::select('id', 'name', 'code')
         ->where('for_company', false)
         ->get();
 
@@ -18,8 +18,7 @@ class LegalDocumentController extends Controller
     }
 
     public function getDocumentsCompany(){
-
-        $Company = LegalDocumentsType::select('name')
+        $Company = LegalDocumentsType::select('id','name')
         ->where('for_company', true)
         ->get();
 

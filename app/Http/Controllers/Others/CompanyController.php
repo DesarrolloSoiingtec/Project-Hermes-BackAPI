@@ -20,32 +20,26 @@ class CompanyController extends Controller
     }
 
     public function getCodesOfActivity(Request $request)
-{
-    // Se registran todos los datos del request para depuración
-    Log::info('Datos del request:', $request->all());
+    {
+        // Extraer el activity_id del request de forma segura
+        $activityId = $request->input('activity_id');
 
-    // Extraer el activity_id del request de forma segura
-    $activityId = $request->input('activity_id');
+        // Validamos que se haya enviado el parámetro activity_id
+        if (!$activityId) {
+            return response()->json(['error' => 'No se proporcionó activity_id'], 400);
+        }
 
-    // Validamos que se haya enviado el parámetro activity_id
-    if (!$activityId) {
-        return response()->json(['error' => 'No se proporcionó activity_id'], 400);
+        // Realizar la consulta usando el activity_id extraído
+        $codes = CiuuCodes::select('class', 'description')
+        ->where('economic_activity_id', $activityId)
+        ->get();
+
+        return response()->json($codes, 200);
     }
 
-    // Realizar la consulta usando el activity_id extraído
-    $codes = CiuuCodes::select('class', 'description')
-    ->where('economic_activity_id', $activityId)
-    ->get();
-
-    Log::info('codes:', $codes->all());
-
-
-    return response()->json($codes, 200);
-
-
-
-}
-
+    public function createCompany(Request $request){
+        Log::info('createCompany: ', $request->all());
+    }
 
 
 

@@ -11,6 +11,7 @@ class Person extends Model
     protected $fillable = [
         'legal_document_type_id',
         'document_number',
+        'email_patient',
         'name',
         'second_name',
         'lastname',
@@ -28,8 +29,14 @@ class Person extends Model
         'country_origin',
         'country_residence',
     ];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function patient()
+    {
+        return $this->hasOne(\App\Models\Siau\Patient::class, 'id', 'id');
     }
 }

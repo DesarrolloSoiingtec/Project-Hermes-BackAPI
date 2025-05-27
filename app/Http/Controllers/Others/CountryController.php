@@ -14,7 +14,6 @@ class CountryController extends Controller
     {
         $countries = Country::select('name','iso2', 'prefix')
         ->get();
-        Log::info('Datos del request:', $countries->all());
 
         return response()->json($countries, 200);
     }

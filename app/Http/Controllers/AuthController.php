@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Auth\Person;
 use App\Models\User;
 use App\Models\LoginLog;
+use App\Models\SystemLog;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use Carbon\Carbon;
@@ -57,6 +58,16 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized or inactive account'], 401);
         }
 
+        // Obtener el usuario autenticado
+        $user = auth()->user();
+
+        SystemLog::create([
+            'user_id' => $user->id,
+            'guard_name' => 'login',
+            'action' => 'login',
+            'description' => 'Authenticated in the system',
+        ]);
+
         return $this->respondWithToken($token);
     }
 
@@ -101,9 +112,8 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token)
     {
-        $permissions = auth('api')->user()->getAllPermissions()->map(function($permission){
-            return $permission->name;
-        });
+        $role = auth('api')->user()->role;
+        $rolePermissions = $role ? $role->permissions->pluck('name') : collect([]);
 
         $baseUrl = rtrim(env("APP_URL"), '/');
         $avatar = auth('api')->user()->avatar;
@@ -131,7 +141,7 @@ class AuthController extends Controller
                 "avatar_url" => $avatar_url,
                 "role" => auth('api')->user()->role,
                 "is_active" => auth('api')->user()->is_active,
-                "permissions" => $permissions,
+                "permissions" => $rolePermissions,
                 "name" =>  $person->name,
                 "lastname" =>  $person->lastname,
             ]

@@ -1,0 +1,12 @@
+version: 2
+authtoken: 2pM08mfCV3wCEKzVdXhSontsE02_4Zfzgcn7AK1ApufcUFT2N
+
+tunnels:
+  frontend:
+    proto: http
+    addr: 5173
+
+  backend:
+    proto: http
+    addr: 4500
+    hostname: webhookapi.ngrok.app

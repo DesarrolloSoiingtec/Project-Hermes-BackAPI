@@ -17,11 +17,13 @@ return new class extends Migration
             // Datos generales
             $table->string('name', 255)->unique(); // Nombre comercial de la empresa
             $table->string('legal_name', 255);// Razón social de la empresa
-            $table->string('nit', 16)->unique();// Número de Identificación Tributaria (NIT)
-            $table->string('company_type', 12)->nullable();// Tipo de empresa -> (SAS, SA, LTDA, etc.)  -----> debe venir de la tabla "legal_documents_types"
+            $table->string('id_number', 16)->unique();// Número de Identificación Tributaria (NIT)
+            $table->string('verification_digit', 2)->nullable(); // Dígito de verificación del NIT (0 a 9)
+            $table->unsignedBigInteger('company_type_id'); // Tipo de empresa -> (SAS, SA, LTDA, etc.)  -----> debe venir de la tabla "legal_documents_types"
+            $table->foreign('company_type_id')->references('id')->on('legal_documents_types');
+
             $table->string('legal_representative', 128)->nullable(); // Representante legal de la empresa
             $table->date('incorporation_date')->nullable(); // Fecha de constitución de la empresa
-            $table->string('economic_activity', 255)->nullable(); // Actividad económica principal  -----> debe venir de la tabla "economic_activities"
 
             // Datos de dirección
             $table->string('street', 100)->nullable(); // Calle o carrera de la dirección
@@ -35,7 +37,7 @@ return new class extends Migration
 
             // Información de contacto
             $table->string('phone', 18)->nullable(); // Teléfono de contacto
-            $table->string('prefix_phone', 5)->nullable(); // Prefijo del teléfono de contacto  -----> debe venir de la tabla "global_prefixes"
+            $table->string('prefix_phone', 5)->nullable(); // Prefijo del teléfono de contacto  ----->   debe venir de la tabla "global_prefixes"
             $table->string('email', 128)->nullable(); // Correo electrónico de contacto
             $table->string('website', 255)->nullable(); // Sitio web de la empresa
             // Información de contacto para usuarios
@@ -45,8 +47,6 @@ return new class extends Migration
 
             // Información legal adicional
             $table->string('registration_number', 40)->nullable(); // Número de registro en la Cámara de Comercio
-            $table->string('verification_digit', 2)->nullable(); // Dígito de verificación del NIT (0 a 9)
-
             $table->timestamps();
         });
     }
