@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Auth\Person;
-use App\Models\Patient\Patient;
+use App\Models\Auth\Patient;
 use App\Models\Siau\patient_training_course;
 use App\Models\Siau\TrainingCourse;
 use App\Models\Siau\CourseFile;
@@ -410,5 +410,5 @@ public function updateTimer_NotAuth(Request $request): JsonResponse{
         'timer_minutes' => $minutes,
         'ptc_id' => $ptc->id,
     ]);
-}   
+}
 }

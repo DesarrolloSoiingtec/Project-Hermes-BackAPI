@@ -18,10 +18,15 @@ class Agreement extends Model
         'end_date',
         'value_agreement',
         'description',
+        'is_active',
+        'contracting_modality',
+        'contracted_services',
+        'complexity_level',
+        'billing_periodicity',
     ];
 
     public function apb()
     {
-        return $this->belongsTo(\App\Models\APB\Apb::class, 'apb_id');
+        return $this->belongsTo(\App\Models\APB\APB::class, 'apb_id');
     }
 }

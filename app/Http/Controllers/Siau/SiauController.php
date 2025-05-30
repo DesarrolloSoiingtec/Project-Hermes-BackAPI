@@ -14,11 +14,11 @@ use App\Models\Siau\CorseExam;
 use App\Models\Siau\ExamAnswer;
 use App\Models\Siau\ReasonAbsence;
 use App\Models\Siau\TrainingCourse;
-use App\Models\Siau\CourseFile;
 use App\Models\Siau\patient_training_course;
 use App\Models\Siau\AgreementsPatients;
 use App\Models\APB\Agreement;
 use App\Models\Other\Branch;
+use App\Models\Siau\CourseFile;
 use Illuminate\Support\Facades\Storage;
 use App\Models\SystemLog;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +28,7 @@ use App\Mail\PendingTrainingMail;
 use App\Models\Other\Service;
 use App\Models\Other\Specialty;
 use Illuminate\Support\Facades\DB;
+
 
 
 
@@ -784,6 +785,48 @@ class SiauController extends Controller
         ], 200);
     }
 
+    public function updateQuestion(Request $request): JsonResponse
+    {
+        Log::info("Request: updateQuestion", $request->all());
+
+        // Validar datos de entrada
+        $request->validate([
+            'question_id' => 'required|integer',
+            'questionnaire_id' => 'required|integer',
+            'text' => 'required|string',
+        ]);
+
+        try {
+            // Buscar la pregunta específica que pertenece al cuestionario indicado
+            $question = ExamQuestion::where('id', $request->input('question_id'))
+                                  ->where('course_exams_id', $request->input('questionnaire_id'))
+                                  ->first();
+
+            if (!$question) {
+                return response()->json([
+                    'message' => 'No se encontró la pregunta especificada en el cuestionario',
+                ], 404);
+            }
+
+            // Actualizar el texto de la pregunta
+            $question->question = $request->input('text');
+            $question->save();
+
+            Log::info("Pregunta actualizada correctamente", $question->toArray());
+
+            return response()->json([
+                'message' => 'Pregunta actualizada correctamente',
+                'question' => $question,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar pregunta: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al actualizar la pregunta: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getQuestionnaires(Request $request){
         $questionnaires = CorseExam::select('id', 'name', 'description', 'is_active', 'training_course_id')
         ->get();
@@ -822,6 +865,39 @@ class SiauController extends Controller
         return response()->json([
             'message' => 'Cuestionario creado correctamente',
             'questionnaires' => $questionnaires,
+        ], 200);
+    }
+
+    public function updateQuestionnaire(Request $request): JsonResponse
+    {
+        Log::info("Request: updateQuestionnaire", $request->all());
+
+        // Validar datos de entrada
+        $request->validate([
+            'questionnaire_id' => 'required|integer',
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        // Buscar el cuestionario por ID
+        $questionnaire = CorseExam::find($request->input('questionnaire_id'));
+
+        if (!$questionnaire) {
+            return response()->json([
+                'message' => 'Cuestionario no encontrado',
+            ], 404);
+        }
+
+        // Actualizar los campos
+        $questionnaire->name = $request->input('name');
+        $questionnaire->description = $request->input('description');
+        $questionnaire->save();
+
+        Log::info("Cuestionario actualizado correctamente", $questionnaire->toArray());
+
+        return response()->json([
+            'message' => 'Cuestionario actualizado correctamente',
+            'questionnaire' => $questionnaire,
         ], 200);
     }
 
@@ -1007,6 +1083,58 @@ class SiauController extends Controller
             'message' => 200,
             'files' => $files,
         ]);
+    }
+
+    public function deleteFile(Request $request): JsonResponse
+    {
+        Log::info("Request: deleteFile", $request->all());
+
+        $validated = $request->validate([
+            'course_id' => 'required|integer',
+            'file_ids' => 'required|array',
+            'file_ids.*' => 'integer'
+        ]);
+
+        try {
+            // Buscar los archivos a eliminar
+            $filesToDelete = CourseFile::where('training_course_id', $validated['course_id'])
+                ->whereIn('id', $validated['file_ids'])
+                ->get();
+
+            if ($filesToDelete->isEmpty()) {
+                return response()->json([
+                    'message' => 'No se encontraron archivos para eliminar',
+                ], 404);
+            }
+
+            // Eliminar archivos físicos
+            foreach ($filesToDelete as $file) {
+                // Verificar que la ruta no sea nula
+                if (!empty($file->file_path)) {
+                    if (Storage::exists($file->file_path)) {
+                        Storage::delete($file->file_path);
+                    }
+                }
+            }
+
+            // Eliminar registros de la base de datos
+            $deleted = CourseFile::where('training_course_id', $validated['course_id'])
+                ->whereIn('id', $validated['file_ids'])
+                ->delete();
+
+            return response()->json([
+                'message' => 'Archivos eliminados correctamente',
+                'count' => $deleted
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error("Error al eliminar archivos: " . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Error al eliminar los archivos',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // ===================================================================================== >>

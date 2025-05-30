@@ -24,7 +24,11 @@ return new class extends Migration
             $table->date('end_date');
             $table->string('value_agreement');
             $table->boolean('is_active')->default(true);
-            $table->string('description');
+            $table->text('description')->nullable();
+            $table->string('contracting_modality')->nullable();
+            $table->json('contracted_services')->nullable();
+            $table->string('complexity_level')->nullable();
+            $table->string('billing_periodicity')->nullable();
 
             $table->timestamps();
         });

@@ -121,9 +121,11 @@ Route::group([
 ],function($router) {
     Route::get("get/apb",[APBController::class,"getApb"]);
     Route::post("create/apb",[APBController::class,"createApb"]);
-    Route::post("X",[APBController::class,"X"]);
+    Route::post("delete/apb",[APBController::class,"deleteApb"]);
+    Route::post("update/apb",[APBController::class,"updateApb"]);
     Route::post("create/agreement",[APBController::class,"createAgreement"]);
     Route::post("delete/agreement",[APBController::class,"deleteAgreement"]);
+    Route::get("get/agreements",[APBController::class,"getAgreements"]);
 });
 
 // Rutas para ver y crear cursos
@@ -151,10 +153,12 @@ Route::group([
     Route::post("siau/create/questionnaire",[SiauController::class,"createQuestionnaire"]);
     Route::post("siau/activate/questionnaire",[SiauController::class,"activateQuestionnaire"]);
     Route::get("siau/table/questionnaire",[SiauController::class,"getQuestionnaires"]);
+    Route::post("siau/update/questionnaire",[SiauController::class,"updateQuestionnaire"]);
 
     Route::post("siau/create/question",[SiauController::class,"createQuestion"]);
     Route::get("siau/table/questions",[SiauController::class,"getQuestion"]);
     Route::post("siau/delete/question",[SiauController::class,"deleteQuestion"]);
+    Route::post("siau/update/question",[SiauController::class,"updateQuestion"]);
 
     Route::post("siau/create/answers",[SiauController::class,"createAnswers"]);
     Route::get("siau/table/answers",[SiauController::class,"getAnswers"]);
@@ -189,6 +193,7 @@ Route::group([
 ],function($router) {
     Route::post("siau/create/file",[SiauController::class,"assignFile"]);
     Route::get("siau/table/files",[SiauController::class,"getFiles"]);
+    Route::post("siau/delete/file",[SiauController::class,"deleteFile"]);
 });
 
 // Rutas para crear sucursales
@@ -244,4 +249,18 @@ Route::group([
 
     Route::post("course/answers",[NotAuth_ValidationController::class,'courseAnswers_NotAuth'])
     ->middleware('throttle:10,1'); // 10 req/min por IP
+});
+
+
+// ---> Ruta para validar si la API se está ejecutando correctamente
+Route::group([
+    'prefix' => 'check-api', // Ruta base para comprobar la API
+], function () {
+    // Ruta para verificar si la API está activa
+    Route::get('status', function () {
+        return response()->json([
+            'status' => 'API is up and running', // Mensaje para indicar que la API está activa
+            'timestamp' => now(),
+        ]);
+    });
 });
