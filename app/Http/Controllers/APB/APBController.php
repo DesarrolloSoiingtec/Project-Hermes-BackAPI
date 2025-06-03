@@ -16,10 +16,25 @@ use App\Models\APB\Agreement;
 
 class APBController extends Controller
 {
-    public function createApb(Request $request){
+    public function createApb(Request $request) {
+        Log::info('createApb:', $request->all());
+
+        // Validar datos de entrada
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'company_type_id' => 'required|integer',
+            'numero_documento' => 'required|string|max:20',
+            'digito_verificacion' => 'nullable|string|max:2',
+            'direccion' => 'required|string|max:255',
+            'telefono' => 'required|string|max:20',
+            'pagina_web' => 'nullable|string|max:255',
+            'correo_facturacion' => 'required|email|max:255',
+            'nombre_gerente' => 'required|string|max:255',
+        ]);
+
         $apb = APB::create([
             'name' => $request->input('nombre'),
-            'company_type_id' => $request->input('tipo_documento'),
+            'company_type_id' => $request->input('company_type_id'), // Corregido
             'number' => $request->input('numero_documento'),
             'verification_digit' => $request->input('digito_verificacion'),
             'address' => $request->input('direccion'),
@@ -31,7 +46,7 @@ class APBController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $apb
+            'data' => $apb
         ], Response::HTTP_CREATED);
     }
 
