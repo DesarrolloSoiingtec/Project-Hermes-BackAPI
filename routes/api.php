@@ -134,6 +134,7 @@ Route::group([
     'middleware' => ['auth:api']
 ],function($router) {
     Route::get("sql/request",[SiauController::class,"sqlRequest"]);
+    Route::get("validate/admin/password",[SiauController::class,"validateAdminPassword"]);
 });
 
 // Rutas para ver y crear cursos

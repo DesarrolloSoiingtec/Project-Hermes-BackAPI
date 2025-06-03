@@ -28,9 +28,7 @@ use App\Mail\PendingTrainingMail;
 use App\Models\Other\Service;
 use App\Models\Other\Specialty;
 use Illuminate\Support\Facades\DB;
-
-
-
+use App\Models\User;
 
 class SiauController extends Controller
 {
@@ -1497,6 +1495,39 @@ class SiauController extends Controller
                 'sugerencia' => $sugerencia
             ], 500);
         }
+    }
+
+    public function validateAdminPassword(Request $request): JsonResponse {
+        Log::info("Request: validateAdminPassword", $request->all());
+
+        // Validar datos de entrada
+        $request->validate([
+            'password' => 'required|string',
+            'user_id' => 'required'
+        ]);
+
+        // Buscar el usuario por ID
+        $user = User::find($request->input('user_id'));
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado'
+            ], 404);
+        }
+
+        // Verificar la contraseña
+        if (\Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Las contraseñas coinciden'
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Las contraseñas no coinciden'
+        ], 401);
     }
 
 }
