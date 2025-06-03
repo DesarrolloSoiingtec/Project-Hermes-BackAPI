@@ -42,6 +42,7 @@ class PermissionsDemoSeeder extends Seeder
         Permission::create(['guard_name' => 'api', 'name' => 'create_sanctioned']);
         Permission::create(['guard_name' => 'api', 'name' => 'edit_sanctioned']);
         Permission::create(['guard_name' => 'api', 'name' => 'delete_sanctioned']);
+        Permission::create(['guard_name' => 'api', 'name' => 'send_reminders']);
 
         // Permisos para siau -> parametros
         Permission::create(['guard_name' => 'api', 'name' => 'view_siau_parameter']);
@@ -54,6 +55,40 @@ class PermissionsDemoSeeder extends Seeder
         Permission::create(['guard_name' => 'api', 'name' => 'create_siau_report']);
         Permission::create(['guard_name' => 'api', 'name' => 'edit_siau_report']);
         Permission::create(['guard_name' => 'api', 'name' => 'delete_siau_report']);
+
+        // Permisos para Sucursales
+        Permission::create(['guard_name' => 'api', 'name' => 'view_branch']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_branch']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_branch']);
+
+        // Permisos para Especialidades
+        Permission::create(['guard_name' => 'api', 'name' => 'view_specialty']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_specialty']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_specialty']);
+        Permission::create(['guard_name' => 'api', 'name' => 'delete_specialty']);
+
+        // Permisos para Servicios
+        Permission::create(['guard_name' => 'api', 'name' => 'view_services']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_services']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_services']);
+        Permission::create(['guard_name' => 'api', 'name' => 'delete_services']);
+
+        // Permisos para Conceptos de Servicio
+        Permission::create(['guard_name' => 'api', 'name' => 'view_service_concepts']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_service_concepts']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_service_concepts']);
+        Permission::create(['guard_name' => 'api', 'name' => 'delete_service_concepts']);
+
+        // Permisos para Contratos
+        Permission::create(['guard_name' => 'api', 'name' => 'view_apb']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_apb']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_apb']);
+        Permission::create(['guard_name' => 'api', 'name' => 'delete_apb']);
+        // Permisos para convenios
+        Permission::create(['guard_name' => 'api', 'name' => 'view_contratos']);
+        Permission::create(['guard_name' => 'api', 'name' => 'create_contratos']);
+        Permission::create(['guard_name' => 'api', 'name' => 'edit_contratos']);
+        Permission::create(['guard_name' => 'api', 'name' => 'delete_contratos']);
 
         // Chat
         Permission::create(['guard_name' => 'api', 'name' => 'view_chat']);

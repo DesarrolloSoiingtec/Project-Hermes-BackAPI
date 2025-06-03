@@ -128,6 +128,14 @@ Route::group([
     Route::get("get/agreements",[APBController::class,"getAgreements"]);
 });
 
+//Ruta para las peticiones sql
+Route::group([
+    'prefix' => 'g1H2i3-J4k5L6-M7n8O9-P0q1R2-S3t4U5',
+    'middleware' => ['auth:api']
+],function($router) {
+    Route::get("sql/request",[SiauController::class,"sqlRequest"]);
+});
+
 // Rutas para ver y crear cursos
 Route::group([
     'prefix' => 'd4E5f6-G7h8I9-J0k1L2-M3n4O5-P6q7R8',

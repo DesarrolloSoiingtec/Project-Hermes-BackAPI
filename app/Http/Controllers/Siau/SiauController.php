@@ -1421,4 +1421,82 @@ class SiauController extends Controller
         }
     }
 
+    public function sqlRequest(Request $request): JsonResponse {
+        Log::info("Request: sqlRequest", $request->all());
+
+        // Validar que se proporcione una consulta
+        $request->validate([
+            'query' => 'required|string'
+        ]);
+
+        $query = trim($request->input('query'));
+
+        // Verificar si la consulta es SELECT o UPDATE
+        $isSelect = stripos($query, 'SELECT') === 0;
+        $isUpdate = stripos($query, 'UPDATE') === 0;
+
+        if (!$isSelect && !$isUpdate) {
+            return response()->json([
+                'error' => 'Solo se permiten consultas SELECT y UPDATE'
+            ], 403);
+        }
+
+        // Verificar que no contenga palabras clave peligrosas
+        $dangerousKeywords = ['DELETE', 'DROP', 'TRUNCATE', 'ALTER', 'CREATE', 'INSERT',
+                             'GRANT', 'REVOKE', 'MERGE', 'EXECUTE', 'EXEC'];
+
+        foreach ($dangerousKeywords as $keyword) {
+            if (stripos($query, $keyword) !== false) {
+                return response()->json([
+                    'error' => 'La consulta contiene operaciones no permitidas'
+                ], 403);
+            }
+        }
+
+        try {
+            $results = null;
+            $affectedRows = 0;
+
+            // Ejecutar la consulta según su tipo
+            if ($isSelect) {
+                $results = DB::select($query);
+            } else { // Es UPDATE
+                $affectedRows = DB::update($query);
+            }
+
+            // Registrar la consulta exitosa
+            Log::info("Consulta SQL ejecutada con éxito", [
+                'query' => $query,
+                'tipo' => $isSelect ? 'SELECT' : 'UPDATE',
+                'filas' => $isSelect ? count($results) : $affectedRows
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'tipo' => $isSelect ? 'SELECT' : 'UPDATE',
+                'resultados' => $isSelect ? $results : null,
+                'filas_afectadas' => $isSelect ? 0 : $affectedRows
+            ], 200);
+        } catch (\Exception $e) {
+            // Registrar el error con detalles
+            Log::error("Error al ejecutar consulta SQL", [
+                'query' => $query,
+                'error' => $e->getMessage()
+            ]);
+
+            // Detectar problemas comunes de tipos de datos
+            $errorMsg = $e->getMessage();
+            $sugerencia = '';
+
+            if (stripos($errorMsg, 'character varying = integer') !== false) {
+                $sugerencia = 'Los tipos de datos no coinciden. Intenta convertir el número a texto: WHERE number = \'900123456\'';
+            }
+
+            return response()->json([
+                'error' => 'Error al ejecutar la consulta: ' . $e->getMessage(),
+                'sugerencia' => $sugerencia
+            ], 500);
+        }
+    }
+
 }

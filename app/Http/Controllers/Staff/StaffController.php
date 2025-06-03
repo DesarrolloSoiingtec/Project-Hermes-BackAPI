@@ -50,7 +50,9 @@ class StaffController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request){
+    public function store(Request $request): JsonResponse
+    {
+        Log::info("Llegué a crear al usuario", $request->all());
         $data = $request->all();
 
         // Procesar la imagen y guardar la ruta en 'avatar'
@@ -72,16 +74,10 @@ class StaffController extends Controller
         $documentType = LegalDocumentsType::where('code', $request->type_document)->first();
 
         try {
-            $user = new User();
-            $user->email = $data['email'];
-            $user->password = $data['password'];
-            $user->role_id = $data['role_id'];
-            $user->is_active = true;
-            $user->avatar = $data['avatar'] ?? null;
-            $user->save();
+            DB::beginTransaction();
 
+            // Primero creamos la persona
             $person = new Person();
-            $person->id = $user->id;
             $person->name = $data['name'];
             $person->lastname = $data['lastname'];
             $person->second_name = $data['second_name'] ?? null;
@@ -93,15 +89,28 @@ class StaffController extends Controller
             $person->birthday = $data['birthday'];
             $person->save();
 
+            // Luego creamos el usuario con el ID de la persona
+            $user = new User();
+            $user->id = $person->id; // Usamos el ID de la persona
+            $user->email = $data['email'];
+            $user->password = $data['password'];
+            $user->role_id = $data['role_id'];
+            $user->is_active = true;
+            $user->avatar = $data['avatar'] ?? null;
+            $user->save();
+
+            DB::commit();
+
             return response()->json([
                 "message" => 200,
                 "user" => new UserResource($user),
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error al insertar datos: ' . $e->getMessage());
             return response()->json([
                 "message" => 403,
-                "message_text" => "Error al insertar datos"
+                "message_text" => "Error al insertar datos: " . $e->getMessage()
             ]);
         }
     }
