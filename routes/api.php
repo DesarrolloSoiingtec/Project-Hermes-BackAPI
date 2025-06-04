@@ -13,6 +13,7 @@ use App\Http\Controllers\Siau\SiauController;
 use App\Http\Controllers\APB\APBController;
 use App\Http\Controllers\unauthenticated\NotAuth_DocumentController;
 use App\Http\Controllers\unauthenticated\NotAuth_ValidationController;
+use App\Http\Controllers\Graphics\GraphicsController;
 
 // Rutas para Autenticación
 Route::group([
@@ -154,7 +155,7 @@ Route::group([
     Route::post("siau/store/reasons",[SiauController::class,"storeReasons"]);
 });
 
-// Rutas para crear cuestonario, preguntas y respuestas y asignarlas a un curso
+// Rutas para crear cuestionario, preguntas y respuestas y asignarlas a un curso
 Route::group([
     'prefix' => 'h1I2j3-K4l5M6-N7o8P9-Q0r1S2-T3u4V5',
     'middleware' => ['auth:api']
@@ -216,6 +217,16 @@ Route::group([
     Route::post("siau/update/branch",[SiauController::class,"updateBranch"]);
     Route::post("siau/deactivate/branch",[SiauController::class,"deactivateBranch"]);
     Route::post("siau/activate/branch",[SiauController::class,"activateBranch"]);
+});
+
+// Rutas para gestionar la sección de gráficas
+Route::group([
+    'prefix' => 'bd2159e5-244e-466e-8a20-a1b1c941eecf',
+    'middleware' => ['auth:api']
+],function($router) {
+    Route::get("siau/get/grap/info",[GraphicsController::class,"getGrapInfo"]);
+    Route::get("siau/get/reasons/grap/info",[GraphicsController::class,"getReasonsGrap"]);
+    Route::get("siau/get/apb/agreement/grap/info",[GraphicsController::class,"getAPBandAgreement"]);
 });
 
 // ========================================================>>
