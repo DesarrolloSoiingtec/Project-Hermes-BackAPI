@@ -24,4 +24,13 @@ class LegalDocumentController extends Controller
 
         return response()->json($Company, 200);
     }
+
+    public function getDocumentsCompanyApb(){
+        $Company = LegalDocumentsType::select('id','code')
+            ->where('for_company', true)
+            ->get();
+
+        return response()->json($Company, 200);
+    }
+
 }

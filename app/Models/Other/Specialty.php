@@ -13,8 +13,8 @@ class Specialty extends Model
         'description',
         'is_active',
     ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    public function subspecialties()
+    {
+        return $this->hasMany(SubSpecialty::class, 'specialty_id');
+    }
 }

@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('legal_documents_types', function (Blueprint $table) {
+        Schema::create('subspecialty', function (Blueprint $table) {
             $table->id();
 
-            $table->string('name', 255);
-            $table->string('code', 12);
-            $table->boolean('type_company')->nullable(); // Si es un documento para la empresa (V) o para usuario (F)
+            $table->string('name', 80);
+            $table->string('description', 255);
+            $table->unsignedBigInteger('specialty_id');
+            $table->foreign('specialty_id')->references('id')->on('specialties');
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('legal_documents_types');
+        Schema::dropIfExists('subspecialty');
     }
 };

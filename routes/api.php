@@ -60,6 +60,7 @@ Route::group([
 ],function($router) {
     Route::get("documents",[LegalDocumentController::class,"getDocuments"]);
     Route::get("documents/company",[LegalDocumentController::class,"getDocumentsCompany"]);
+    Route::get("documents/company/APB",[LegalDocumentController::class,"getDocumentsCompanyApb"]);
 });
 
 // Rutas para empresa
@@ -73,7 +74,7 @@ Route::group([
 
 });
 
-// Rutas para paises - prefijos
+// Rutas para países - prefijos
 Route::group([
     'prefix' => 'b7C8d9-E0f1G2-H3i4J5-K6l7M8-N9o0P1',
     'middleware' => ['auth:api']
@@ -104,15 +105,18 @@ Route::group([
     Route::get("get/medical/from-specialties",[SiauController::class,"getMedicalFromSpecialties"]);
 });
 
-// Rutas para crear especialidades medicas
+// Rutas para crear especialidades médicas
 Route::group([
     'prefix' => 'f9G8h7-I6j5K4-L3m2N1-O0p9Q8-R7s6T5',
     'middleware' => ['auth:api']
 ],function($router) {
     Route::get("specialties",[SpecialtyController::class,"getSpecialties"]);
-    Route::post("/create/specialties",[SpecialtyController::class,"createSpecialty"]);
-    Route::post("/delete/specialties",[SpecialtyController::class,"deleteSpecialty"]);
-    Route::post("/update/specialties",[SpecialtyController::class,"updateSpecialty"]);
+    Route::post("create/specialties",[SpecialtyController::class,"createSpecialty"]);
+    Route::post("delete/specialties",[SpecialtyController::class,"deleteSpecialty"]);
+    Route::post("update/specialties",[SpecialtyController::class,"updateSpecialty"]);
+
+    Route::post("create/subspecialty",[SpecialtyController::class,"createSubspecialty"]);
+    Route::post("delete/subspecialty",[SpecialtyController::class,"deleteSubspecialty"]);
 });
 
 // Rutas para crear APB y asignarles Convenios
