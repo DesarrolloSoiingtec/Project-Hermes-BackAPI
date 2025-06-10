@@ -200,14 +200,23 @@ class StaffController extends Controller
      */
     public function destroy(string $id){
         $user = User::findOrFail($id);
+        $person = Person::findOrFail($id);
 
         if ($user->is_active == true){
             // En lugar de eliminar el usuario, actualiza el campo is_active a false
             $user->is_active = false;
             $user->save();
+
+            // Actualizar también el estado en la tabla persons
+            $person->is_active = false;
+            $person->save();
         }else{
             $user->is_active = true;
             $user->save();
+
+            // Actualizar también el estado en la tabla persons
+            $person->is_active = true;
+            $person->save();
         }
 
         return response()->json([
