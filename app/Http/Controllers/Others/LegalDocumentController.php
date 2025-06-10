@@ -11,7 +11,7 @@ class LegalDocumentController extends Controller
 {
     public function getDocuments(){
         $documents = LegalDocumentsType::select('id', 'name', 'code')
-        ->where('for_company', false)
+        ->where('for_person', true)
         ->get();
 
         return response()->json($documents, 200);
@@ -19,7 +19,7 @@ class LegalDocumentController extends Controller
 
     public function getDocumentsCompany(){
         $Company = LegalDocumentsType::select('id','name')
-        ->where('for_company', true)
+        ->where('type_company', true)
         ->get();
 
         return response()->json($Company, 200);

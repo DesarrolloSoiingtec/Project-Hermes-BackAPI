@@ -63,6 +63,7 @@ class SiauController extends Controller
     public function createUser(Request $request)
     {
         Log::info("Request: createUser", $request->all());
+        $hour_appointment = $request->input('appointment_time');
 
         // Validar datos de entrada
         $this->validateUserData($request);
@@ -70,10 +71,9 @@ class SiauController extends Controller
         try {
             // Usar transacción para garantizar integridad de datos
             // Si alguna de las operaciones falla, la transacción se deshacerá automáticamente
-            return DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($request, $hour_appointment) {
                 // Preparar y procesar datos de la persona
                 $person = $this->createOrUpdatePerson($request);
-
                 // Crear o verificar paciente
                 $patient = $this->ensurePatientExists($person);
 
@@ -81,10 +81,11 @@ class SiauController extends Controller
                 $agreementPatient = $this->processAgreement($request, $person);
 
                 // Crear registro en patients_training_courses
-                $this->createTrainingCourseAssignment($request, $person, $agreementPatient);
+                $trainingCourse = $this->createTrainingCourseAssignment($request, $person, $agreementPatient);
+                $appointmentDate = $trainingCourse->date_appointment;
 
                 // Enviar correo de recordatorio
-                $this->sendTrainingReminder($person, $request->input('appointment_date'));
+                $this->sendTrainingReminder($person, $patient, $agreementPatient, $appointmentDate, $trainingCourse, $hour_appointment);
 
                 return response()->json([
                     'message' => 'Usuario creado correctamente'
@@ -99,7 +100,7 @@ class SiauController extends Controller
     }
 
     /**
-     * Valida los datos de entrada para la creación de usuario
+     * Válida los datos de entrada para la creación de usuario
      *
      * @param Request $request Datos a validar
      * @return void
@@ -258,13 +259,18 @@ class SiauController extends Controller
      * @param string $appointmentDate Fecha de la cita
      * @return void
      */
-    private function sendTrainingReminder(Person $person, $appointmentDate)
-    {
+    private function sendTrainingReminder($person, $patient, $agreementPatient, $appointmentDate, $trainingCourse, $hour_appointment){
         // Obtener URL de configuración en lugar de hardcodear
-        $trainingLink = config('app.training_url', 'https://c28a44671434.ngrok.app/capacitacion-pedagogica');
+        $trainingLink = config('app.training_url', 'https://frontend-medyser.space/capacitacion-pedagogica');
+
+        if ($hour_appointment) {
+            $hour = \Carbon\Carbon::createFromFormat('H:i', $hour_appointment)->format('h:i A');
+        } else {
+            $hour = null;
+        }
 
         Mail::to($person->email_patient)
-            ->send(new ReminderMail($person, $appointmentDate, $trainingLink));
+            ->send(new ReminderMail($person, $patient, $agreementPatient, $trainingCourse, $trainingLink, $appointmentDate, $hour_appointment));
 
         Log::info("Recordatorio de capacitación enviado a {$person->email_patient}");
     }
@@ -292,7 +298,7 @@ class SiauController extends Controller
         Log::info('TrainingCoursesCount:', ['count' => $trainingCoursesCount]);
 
         if ($trainingCoursesCount > 0) {
-            $trainingLink = "https://a92eb1c97111.ngrok.app/capacitacion-pedagogica";
+            $trainingLink = "https://frontend-medyser.space/capacitacion-pedagogica";
 
             Mail::to($person->email_patient)->send(new PendingTrainingMail(
                 $person,

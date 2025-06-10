@@ -30,7 +30,7 @@ class NotAuth_DocumentController extends Controller
 
         // [Consulta segura] Solo se expone 'id' y 'name' donde for_company = false
         $documents = LegalDocumentsType::select('id', 'name')
-            ->where('for_company', false)
+            ->where('for_person', true)
             ->get();
 
         // [Respuesta] Lista simple de documentos legales

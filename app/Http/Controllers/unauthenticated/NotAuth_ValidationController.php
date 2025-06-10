@@ -333,8 +333,7 @@ class NotAuth_ValidationController extends Controller
         if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             try {
                 Mail::to($email)->send(new CongratulationsMail(
-                    $person->name,
-                    $person->lastname,
+                    $person,
                     'https://clinicamedyser.com.co/'
                 ));
                 Log::info("Correo de felicitación enviado a $email");

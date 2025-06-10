@@ -25,7 +25,7 @@ class PendingTrainingMail extends Mailable
     {
         return $this
             ->from(config('mail.from.address'), config('mail.from.name'))
-            ->subject('📚 Tienes capacitaciones pendientes')
+            ->subject('⚠️ Recordatorio - Tienes capacitaciones pendientes')
             ->markdown('emails.pending-training')
             ->with([
                 'firstName'           => $this->person->name,

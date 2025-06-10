@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->string('name', 255);
             $table->string('code', 12);
-            $table->boolean('type_company')->nullable(); // Si es un documento para la empresa (V) o para usuario (F)
+            $table->boolean('for_company')->nullable(); // Si es un documento para la empresa (V) o para usuario (F)
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
