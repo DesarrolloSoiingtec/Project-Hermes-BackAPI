@@ -17,6 +17,7 @@ use App\Models\Siau\TrainingCourse;
 use App\Models\Siau\patient_training_course;
 use App\Models\Siau\AgreementsPatients;
 use App\Models\APB\Agreement;
+use App\Models\APB\APB;
 use App\Models\Other\Branch;
 use App\Models\Siau\CourseFile;
 use Illuminate\Support\Facades\Storage;
@@ -29,7 +30,7 @@ use App\Models\Other\Service;
 use App\Models\Other\Specialty;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
-
+use Carbon\Carbon;
 
 class GraphicsController extends Controller
 {
@@ -148,10 +149,19 @@ class GraphicsController extends Controller
         ]);
     }
 
-    public function getAPBandAgreement(Request $request): JsonResponse {
+    public function getAPBandAgreement(Request $request): JsonResponse
+    {
         // Obtener fechas del request
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
+
+
+        // Convertir a formato DD/MM/YYYY
+        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('d/m/Y');
+        $fechaFinFormateada = Carbon::parse($fechaFin)->format('d/m/Y');
+
+
+        log::info("Fechas recibidas para gráfica de motivos de ausencia:", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
 
         // Validar que las fechas sean válidas
         if (!$fechaInicio || !$fechaFin) {
@@ -159,8 +169,8 @@ class GraphicsController extends Controller
         }
 
         // Convertir fechas a objetos Carbon
-        $fechaInicio = \Carbon\Carbon::parse($fechaInicio)->startOfDay();
-        $fechaFin = \Carbon\Carbon::parse($fechaFin)->endOfDay();
+        $fechaInicio = Carbon::parse($fechaInicio)->startOfDay();
+        $fechaFin = Carbon::parse($fechaFin)->endOfDay();
 
         // Verificar que fecha_inicio sea anterior a fecha_fin
         if ($fechaInicio->gt($fechaFin)) {
@@ -168,26 +178,29 @@ class GraphicsController extends Controller
         }
 
         // Contar registros por agreement_patient_id
-        $agreementCounts = patient_training_course::whereBetween('created_at', [$fechaInicio, $fechaFin])
-            ->whereNotNull('agreement_patient_id')
-            ->select('agreement_patient_id', DB::raw('COUNT(*) as total'))
-            ->groupBy('agreement_patient_id')
+        $agreementCounts = AgreementsPatients::select('agreements_patients.agreement_id', DB::raw('COUNT(*) as total'))
+            ->whereBetween('patients_training_courses.created_at', [$fechaInicioFormateada, $fechaFinFormateada]) //dd/mm/aaaa
+            ->join('patients_training_courses', 'agreements_patients.id', '=', 'patients_training_courses.agreement_patient_id')
+            ->groupBy('agreements_patients.agreement_id')
             ->get();
 
-        // Convertir a array asociativo para fácil acceso
+        // Corregir el log (había un error de sintaxis)
+        Log::info('Conteos de convenios por paciente:', ['conteos' => $agreementCounts]);
+
+        // Convertir a array asociativo para fácil acceso (corregido)
         $agreementCountsArray = [];
         foreach ($agreementCounts as $count) {
-            $agreementCountsArray[$count->agreement_patient_id] = $count->total;
+            $agreementCountsArray[$count->agreement_id] = $count->total;
         }
 
         // Obtener todos los convenios con sus APBs
         $agreements = Agreement::select('id', 'name', 'apb_id')->get();
 
         // Obtener todos los APBs
-        $apbs = \App\Models\APB\APB::select('id', 'name')->get()->keyBy('id');
+        $apbs = APB::select('id', 'name')->get()->keyBy('id');
 
         // Preparar los datos para la respuesta
-        $resultData = $agreements->map(function($agreement) use ($agreementCountsArray, $apbs) {
+        $resultData = $agreements->map(function ($agreement) use ($agreementCountsArray, $apbs) {
             $apbName = isset($apbs[$agreement->apb_id]) ? $apbs[$agreement->apb_id]->name : 'Sin APB';
 
             return [
@@ -204,5 +217,4 @@ class GraphicsController extends Controller
             'data' => $resultData
         ]);
     }
-
 }
