@@ -95,10 +95,8 @@ class UserSeeder extends Seeder
                 'commitment'            => null,
                 'reason_absence_id'     => null,
                 'agreement_patient_id'  => $agreementPatient->id,
-                'medical_id'            => 1,
                 'specialty_id'          => 1,
                 'service_id'            => 1,
-                'branch_id'             => 1,
             ]
         );
     }

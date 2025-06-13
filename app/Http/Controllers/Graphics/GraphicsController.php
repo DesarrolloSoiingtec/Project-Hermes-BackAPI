@@ -193,10 +193,10 @@ class GraphicsController extends Controller
             $agreementCountsArray[$count->agreement_id] = $count->total;
         }
 
-        // Obtener todos los convenios con sus APBs
+        // Obtener todos los convenios con sus APB
         $agreements = Agreement::select('id', 'name', 'apb_id')->get();
 
-        // Obtener todos los APBs
+        // Obtener todos los APB
         $apbs = APB::select('id', 'name')->get()->keyBy('id');
 
         // Preparar los datos para la respuesta
@@ -217,4 +217,121 @@ class GraphicsController extends Controller
             'data' => $resultData
         ]);
     }
+
+//    public function getGrapTable(Request $request): JsonResponse {
+//        Log::info("Obteniendo datos para la tabla gráfica", $request->all());
+//
+//        // Obtener fechas y sede del request
+//        $fechaInicio = $request->input('fecha_inicio');
+//        $fechaFin = $request->input('fecha_fin');
+//        $sedeId = $request->input('sede_id');
+//
+//        // Formatear a día/mes/año (DD/MM/YYYY)
+//        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('d/m/Y 00:00:00');
+//        $fechaFinFormateada = Carbon::parse($fechaFin)->format('d/m/Y 23:59:59');
+//
+//        // Iniciar la consulta base con el rango de fechas
+//        $query = patient_training_course::whereBetween('created_at', [$fechaInicioFormateada, $fechaFinFormateada]);
+//
+//        // Aplicar filtro de sede solo si no es '%'
+//        if ($sedeId !== '%') {
+//            $query->where('branch_id', $sedeId);
+//        }
+//
+//        // Agrupar por service_id y contar
+//        $resultados = $query->select('service_id', DB::raw('COUNT(*) as total'))
+//            ->groupBy('service_id')
+//            ->get();
+//
+//        // Obtener información detallada de los servicios con su concepto relacionado
+//        $serviciosIds = $resultados->pluck('service_id')->toArray();
+//        log::info("IDs de servicios obtenidos:", ['servicios_ids' => $serviciosIds]);
+//
+//
+//        $servicios = Service::select(
+//            'services.id',
+//            'services.cups',
+//            'services.name as service_name',
+//            'services.concept_service_id',
+//            'concepts_services.name as concept_service_name',
+//            'branch.name as branch_name'
+//        )
+//            ->join('concepts_services', 'services.concept_service_id', '=', 'concepts_services.id')
+//            ->join('patients_training_courses', 'services.id', '=', 'patients_training_courses.service_id')
+//            ->join('branch', 'patients_training_courses.branch_id', '=', 'branch.id')
+//            ->whereIn('services.id', $serviciosIds)
+//            ->get()
+//            ->keyBy('id');
+//
+//        // Formatear los resultados para incluir solo name y concept_service_id
+//        $datosFormateados = $resultados->map(function($item) use ($servicios) {
+//            $servicio = $servicios[$item->service_id] ?? null;
+//            return [
+//                'service_cups' => $servicio ? $servicio->cups : 'Sin CUPS',
+//                'service_name' => $servicio ? $servicio->service_name : 'Servicio sin nombre',
+//                'concept_service_id' => $servicio ? $servicio->concept_service_id : null,
+//                'concept_service_name' => $servicio ? $servicio->concept_service_name : 'Sin concepto',
+//                'branch_name' => $servicio ? $servicio->branch_name : 'Sin sede',
+//                'total' => $item->total
+//            ];
+//        });
+//
+//        return response()->json([
+//            'success' => true,
+//            'data' => $datosFormateados
+//        ]);
+//    }
+
+public function getGrapTable(Request $request): JsonResponse {
+    Log::info("Obteniendo datos para la tabla gráfica", $request->all());
+
+    $fechaInicio = $request->input('fecha_inicio');
+    $fechaFin = $request->input('fecha_fin');
+    $sedeId = $request->input('sede_id');
+
+    $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
+    $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
+
+    // Consulta agrupando por service_id y branch_id
+    $query = patient_training_course::whereBetween('created_at', [$fechaInicioFormateada, $fechaFinFormateada]);
+    if ($sedeId !== '%') {
+        $query->where('branch_id', $sedeId);
+    }
+
+    $resultados = $query->select('service_id', 'branch_id', DB::raw('COUNT(*) as total'))
+        ->groupBy('service_id', 'branch_id')
+        ->get();
+
+    $serviciosIds = $resultados->pluck('service_id')->unique()->toArray();
+    $branchIds = $resultados->pluck('branch_id')->unique()->toArray();
+
+    // Obtener info de servicios y sedes
+    $servicios = Service::whereIn('id', $serviciosIds)
+        ->with('conceptService') // Asumiendo relación en el modelo Service
+        ->get()
+        ->keyBy('id');
+
+    $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
+
+    // Formatear resultados
+    $datosFormateados = $resultados->map(function($item) use ($servicios, $branches) {
+        $servicio = $servicios[$item->service_id] ?? null;
+        $branch = $branches[$item->branch_id] ?? null;
+        return [
+            'service_cups' => $servicio ? $servicio->cups : 'Sin CUPS',
+            'service_name' => $servicio ? $servicio->name : 'Servicio sin nombre',
+            'concept_service_id' => $servicio ? $servicio->concept_service_id : null,
+            'concept_service_name' => $servicio && $servicio->conceptService ? $servicio->conceptService->name : 'Sin concepto',
+            'branch_id' => $branch ? $branch->id : null,
+            'branch_name' => $branch ? $branch->name : 'Sin sede',
+            'total' => $item->total
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $datosFormateados
+    ]);
+}
+
 }

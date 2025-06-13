@@ -1373,6 +1373,8 @@ class SiauController extends Controller
 
         $branches = Branch::where('is_active', true)->get();
 
+        log::info("Active branches retrieved", $branches->toArray());
+
         return response()->json([
             'message' => 'Sucursales obtenidas correctamente',
             'branches' => $branches,

@@ -29,10 +29,18 @@ return new class extends Migration
             $table->unsignedBigInteger('agreement_patient_id');
             $table->foreign('agreement_patient_id')->references('id')->on('agreements_patients');
             $table->string('timer')->nullable();
-            $table->string('medical_id');
-            $table->string('specialty_id');
-            $table->string('service_id');
-            $table->string('branch_id');
+
+            $table->unsignedBigInteger('medical_id')->nullable();
+            $table->foreign('medical_id')->references('id')->on('medicals');
+
+            $table->unsignedBigInteger('specialty_id')->nullable();
+            $table->foreign('specialty_id')->references('id')->on('specialties');
+
+            $table->unsignedBigInteger('service_id')->nullable();
+            $table->foreign('service_id')->references('id')->on('services');
+
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->foreign('branch_id')->references('id')->on('branch');
 
             $table->timestamps();
         });

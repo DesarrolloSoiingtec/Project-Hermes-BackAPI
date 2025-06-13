@@ -167,7 +167,9 @@ class NotAuth_ValidationController extends Controller
         $questionIds = $examQuestions->pluck('id')->toArray();
 
         // [Respuestas de las preguntas]
-        $examAnswers = ExamAnswers::whereIn('exam_question_id', $questionIds)->get();
+        $examAnswers = ExamAnswers::whereIn('exam_question_id', $questionIds)
+            ->where('is_active', true)
+            ->get();
 
         // [Logging limitado del resultado] Evita exponer todo en logs
         Log::info("Examen {$courseExam->id} recuperado con {$examQuestions->count()} preguntas y {$examAnswers->count()} respuestas.");
