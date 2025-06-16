@@ -157,9 +157,8 @@ class GraphicsController extends Controller
 
 
         // Convertir a formato DD/MM/YYYY
-        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('d/m/Y');
-        $fechaFinFormateada = Carbon::parse($fechaFin)->format('d/m/Y');
-
+        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
+        $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
 
         log::info("Fechas recibidas para gráfica de motivos de ausencia:", ['fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin]);
 

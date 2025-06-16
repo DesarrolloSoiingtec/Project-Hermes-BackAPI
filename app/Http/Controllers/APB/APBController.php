@@ -185,5 +185,26 @@ class APBController extends Controller
         ], Response::HTTP_OK);
     }
 
+    public function getApbFromAgreement(Request $request): JsonResponse
+    {
+        log::info('getApbFromAgreement:', $request->all());
+        $agreements = Agreement::where('is_active', true)
+            ->with(['apb:id,name'])
+            ->get(['id', 'apb_id', 'name']);
+
+        $result = $agreements->map(function ($agreement) {
+            return [
+                'agreement_id' => $agreement->id,
+                'agreement_name' => $agreement->name,
+                'apb_name' => $agreement->apb ? $agreement->apb->name : null,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $result
+        ], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    }
+
 }
 

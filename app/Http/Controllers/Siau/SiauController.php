@@ -400,7 +400,7 @@ class SiauController extends Controller
 
     public function getUsers(Request $request){
         try {
-            // Paso 1: Obtener personas con paciente
+            // 1. Obtener personas con paciente
             $users = Person::with(['patient:id,completed,created_at'])
                 ->select([
                     'id', 'legal_document_type_id', 'document_number', 'email_patient',
@@ -412,37 +412,83 @@ class SiauController extends Controller
                 })
                 ->get();
 
-            // Paso 2: Extraer IDs
             $personIds = $users->pluck('id')->toArray();
 
-            // Paso 3: Obtener cursos de formación relacionados
+            // 2. Cursos de formación relacionados
             $trainingRecords = patient_training_course::with('trainingCourse')
                 ->whereIn('patient_person_id', $personIds)
                 ->get();
 
-            // Determinar el estado general basado en los valores de "state" en $trainingRecords
-            $estado = null;
+            // 3. Médicos
+            $medicalIds = $trainingRecords->pluck('medical_id')->filter()->unique()->toArray();
+            $medics = Person::whereIn('id', $medicalIds)
+                ->select('id', 'name', 'lastname')
+                ->get();
+            $medicNames = $medics->mapWithKeys(function($person) {
+                return [$person->id => trim($person->name . ' ' . $person->lastname)];
+            });
 
+            // 4. AgreementPatient y Agreements
+            $agreementPatientIds = $trainingRecords->pluck('agreement_patient_id')->filter()->unique()->toArray();
+            $agreementsPatients = \App\Models\APB\AgreementPatient::with('agreement')
+                ->whereIn('id', $agreementPatientIds)
+                ->get();
+
+            // Mapear nombres de acuerdo y recolectar apb_id
+            $agreementNames = [];
+            $apbIds = [];
+            $agreementApbIds = [];
+            foreach ($agreementsPatients as $ap) {
+                $agreement = $ap->agreement;
+                $agreementNames[$ap->id] = $agreement ? $agreement->name : null;
+                if ($agreement && isset($agreement->apb_id)) {
+                    $apbIds[] = $agreement->apb_id;
+                    $agreementApbIds[$ap->id] = $agreement->apb_id;
+                }
+            }
+            $apbIds = array_unique($apbIds);
+
+            // 5. Traer nombres de APB
+            $apbs = \App\Models\APB\APB::whereIn('id', $apbIds)->get()->keyBy('id');
+
+            // 6. Mapear apb_id a nombre
+            $apbNames = [];
+            foreach ($agreementApbIds as $agreementPatientId => $apbId) {
+                $apbNames[$agreementPatientId] = isset($apbs[$apbId]) ? $apbs[$apbId]->name : null;
+            }
+
+            // 7. Reemplazar y agregar campo apb
+            $trainingRecords = $trainingRecords->map(function($record) use ($medicNames, $agreementNames, $apbNames) {
+                $recordArray = $record->toArray();
+                if (isset($recordArray['medical_id']) && $recordArray['medical_id']) {
+                    $recordArray['medical_id'] = $medicNames[$recordArray['medical_id']] ?? $recordArray['medical_id'];
+                }
+                if (isset($recordArray['agreement_patient_id']) && $recordArray['agreement_patient_id']) {
+                    $id = $recordArray['agreement_patient_id'];
+                    $recordArray['agreement_patient_id'] = $agreementNames[$id] ?? $id;
+                    $recordArray['apb'] = $apbNames[$id] ?? null;
+                } else {
+                    $recordArray['apb'] = null;
+                }
+                return $recordArray;
+            });
+
+            // 8. Estado general
             $estado = $users->mapWithKeys(function ($user) use ($trainingRecords) {
-                $userTrainingStates = $trainingRecords
+                $userTrainingStates = collect($trainingRecords)
                     ->where('patient_person_id', $user->id)
                     ->pluck('state');
-
                 $allCompleted = $userTrainingStates->every(fn($state) => $state === 3);
-
-                // Update the "completed" field in the Patient model
                 $patient = Patient::find($user->id);
                 if ($patient) {
                     $patient->completed = $allCompleted;
                     $patient->save();
                 }
-
                 return [$user->id => $allCompleted ? 3 : 1];
             });
 
             Log::info("Estado determinado:", ['estado' => $estado]);
 
-            // Paso 4: Mapear los usuarios como antes
             $formattedUsers = $users->map(function ($person) {
                 return [
                     'id' => $person->id,
@@ -1537,5 +1583,31 @@ class SiauController extends Controller
             'message' => 'Las contraseñas no coinciden'
         ], 401);
     }
+
+    public function getMedicalName(Request $request): JsonResponse
+    {
+        log::info("Llegue a la función getMedicalName");
+        // 1. Obtener los IDs únicos de Medical
+        $medicalIds = Medical::pluck('id')->unique();
+
+        // 2. Buscar en Person los registros con esos IDs
+        $persons = Person::whereIn('id', $medicalIds)
+            ->select('id', 'name', 'second_name')
+            ->where('is_active', true)
+            ->get();
+
+        // 3. Formatear la respuesta
+        $result = $persons->map(function ($person) {
+            return [
+                'id' => $person->id,
+                'name' => trim($person->name . ' ' . $person->second_name)
+            ];
+        });
+
+        return response()->json([
+            'medicals' => $result
+        ], 200);
+    }
+
 
 }

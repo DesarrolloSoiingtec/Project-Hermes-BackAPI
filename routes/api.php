@@ -103,6 +103,8 @@ Route::group([
     'middleware' => ['auth:api']
 ],function($router) {
     Route::get("get/medical/from-specialties",[SiauController::class,"getMedicalFromSpecialties"]);
+
+    Route::get("get/medical/nameFromUser",[SiauController::class,"getMedicalName"]);
 });
 
 // Rutas para crear especialidades médicas
@@ -131,6 +133,8 @@ Route::group([
     Route::post("create/agreement",[APBController::class,"createAgreement"]);
     Route::post("delete/agreement",[APBController::class,"deleteAgreement"]);
     Route::get("get/agreements",[APBController::class,"getAgreements"]);
+
+    Route::get("get/apb/fromAgreementUser",[APBController::class,"getApbFromAgreement"]);
 });
 
 //Ruta para las peticiones sql
