@@ -281,56 +281,122 @@ class GraphicsController extends Controller
 //        ]);
 //    }
 
-public function getGrapTable(Request $request): JsonResponse {
-    Log::info("Obteniendo datos para la tabla gráfica", $request->all());
+    public function getGrapTable(Request $request): JsonResponse {
+        Log::info("Obteniendo datos para la tabla gráfica", $request->all());
 
-    $fechaInicio = $request->input('fecha_inicio');
-    $fechaFin = $request->input('fecha_fin');
-    $sedeId = $request->input('sede_id');
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+        $sedeId = $request->input('sede_id');
 
-    $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
-    $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
+        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
+        $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
 
-    // Consulta agrupando por service_id y branch_id
-    $query = patient_training_course::whereBetween('created_at', [$fechaInicioFormateada, $fechaFinFormateada]);
-    if ($sedeId !== '%') {
-        $query->where('branch_id', $sedeId);
+        // Consulta agrupando por service_id y branch_id
+        $query = patient_training_course::whereBetween('created_at', [$fechaInicioFormateada, $fechaFinFormateada]);
+        if ($sedeId !== '%') {
+            $query->where('branch_id', $sedeId);
+        }
+
+        $resultados = $query->select('service_id', 'branch_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('service_id', 'branch_id')
+            ->get();
+
+        $serviciosIds = $resultados->pluck('service_id')->unique()->toArray();
+        $branchIds = $resultados->pluck('branch_id')->unique()->toArray();
+
+        // Obtener info de servicios y sedes
+        $servicios = Service::whereIn('id', $serviciosIds)
+            ->with('conceptService') // Asumiendo relación en el modelo Service
+            ->get()
+            ->keyBy('id');
+
+        $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
+
+        // Formatear resultados
+        $datosFormateados = $resultados->map(function($item) use ($servicios, $branches) {
+            $servicio = $servicios[$item->service_id] ?? null;
+            $branch = $branches[$item->branch_id] ?? null;
+            return [
+                'service_cups' => $servicio ? $servicio->cups : 'Sin CUPS',
+                'service_name' => $servicio ? $servicio->name : 'Servicio sin nombre',
+                'concept_service_id' => $servicio ? $servicio->concept_service_id : null,
+                'concept_service_name' => $servicio && $servicio->conceptService ? $servicio->conceptService->name : 'Sin concepto',
+                'branch_id' => $branch ? $branch->id : null,
+                'branch_name' => $branch ? $branch->name : 'Sin sede',
+                'total' => $item->total
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $datosFormateados
+        ]);
     }
 
-    $resultados = $query->select('service_id', 'branch_id', DB::raw('COUNT(*) as total'))
-        ->groupBy('service_id', 'branch_id')
-        ->get();
+    public function getDetailGrap(Request $request): JsonResponse {
+        Log::info("Obteniendo datos para la gráfica de detalles", $request->all());
 
-    $serviciosIds = $resultados->pluck('service_id')->unique()->toArray();
-    $branchIds = $resultados->pluck('branch_id')->unique()->toArray();
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+        $sede = $request->input('sede');
 
-    // Obtener info de servicios y sedes
-    $servicios = Service::whereIn('id', $serviciosIds)
-        ->with('conceptService') // Asumiendo relación en el modelo Service
-        ->get()
-        ->keyBy('id');
+        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
+        $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
 
-    $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
+        // Obtener registros de cursos con sus servicios y datos de pacientes
+        $patientCourses = patient_training_course::whereBetween('patients_training_courses.created_at',
+                          [$fechaInicioFormateada, $fechaFinFormateada])
+            ->when($sede !== '%', function($query) use ($sede) {
+                return $query->where('patients_training_courses.branch_id', $sede);
+            })
+            ->join('persons', 'patients_training_courses.patient_person_id', '=', 'persons.id')
+            ->join('legal_documents_types', 'persons.legal_document_type_id', '=', 'legal_documents_types.id')
+            ->leftJoin('services', 'patients_training_courses.service_id', '=', 'services.id')
+            ->leftJoin('concepts_services', 'services.concept_service_id', '=', 'concepts_services.id')
+            ->leftJoin('branch', 'patients_training_courses.branch_id', '=', 'branch.id')
+            ->leftJoin('agreements_patients', 'patients_training_courses.agreement_patient_id', '=', 'agreements_patients.id')
+            ->leftJoin('agreements', 'agreements_patients.agreement_id', '=', 'agreements.id')
+            ->leftJoin('apb', 'agreements.apb_id', '=', 'apb.id')
+            ->select(
+                'persons.id',
+                'legal_documents_types.code as document_type',
+                'persons.document_number',
+                'persons.name',
+                'persons.second_name',
+                'persons.lastname',
+                'persons.second_lastname',
+                'services.name as service_name',
+                'services.cups',
+                'concepts_services.name as concept_service_name',
+                'branch.name as branch_name',
+                'agreements.name as agreement_name',
+                'apb.name as apb_name'
+            )
+            ->get();
 
-    // Formatear resultados
-    $datosFormateados = $resultados->map(function($item) use ($servicios, $branches) {
-        $servicio = $servicios[$item->service_id] ?? null;
-        $branch = $branches[$item->branch_id] ?? null;
-        return [
-            'service_cups' => $servicio ? $servicio->cups : 'Sin CUPS',
-            'service_name' => $servicio ? $servicio->name : 'Servicio sin nombre',
-            'concept_service_id' => $servicio ? $servicio->concept_service_id : null,
-            'concept_service_name' => $servicio && $servicio->conceptService ? $servicio->conceptService->name : 'Sin concepto',
-            'branch_id' => $branch ? $branch->id : null,
-            'branch_name' => $branch ? $branch->name : 'Sin sede',
-            'total' => $item->total
-        ];
-    });
+        // Formatear los resultados
+        $formattedData = $patientCourses->map(function($item) {
+            $fullName = trim($item->name . ' ' .
+                        ($item->second_name ? $item->second_name . ' ' : '') .
+                        $item->lastname . ' ' .
+                        ($item->second_lastname ? $item->second_lastname : ''));
 
-    return response()->json([
-        'success' => true,
-        'data' => $datosFormateados
-    ]);
-}
+            return [
+                'id' => $item->id,
+                'user_name' => $fullName,
+                'user_doc' => $item->document_type . ' ' . $item->document_number,
+                'service' => $item->service_name ?? 'Sin servicio',
+                'cups' => $item->cups ?? 'Sin CUPS',
+                'concep_service' => $item->concept_service_name ?? 'Sin concepto',
+                'branch' => $item->branch_name ?? 'Sin sucursal',
+                'agreement' => $item->agreement_name ?? 'Sin acuerdo',
+                'apb' => $item->apb_name ?? 'Sin APB'
+            ];
+        });
 
+        return response()->json([
+            'success' => true,
+            'data' => $formattedData
+        ]);
+    }
 }

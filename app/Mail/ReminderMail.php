@@ -73,7 +73,7 @@ class ReminderMail extends Mailable
             ->with([
                 'firstName'    => $this->person->name,
                 'lastName'     => $this->person->lastname,
-                'medical'      => $this->medical->name,
+                'medical'      => $this->medical->name.' '.$this->medical->lastname,
                 'specialty'    => $this->specialty->name,
                 'date'         => $this->appointmentDate,
                 'hour'         => $this->hourAppointment,

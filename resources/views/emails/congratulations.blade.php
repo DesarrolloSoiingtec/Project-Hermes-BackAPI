@@ -30,7 +30,7 @@ Si tiene alguna pregunta o necesita asistencia para agendar su nueva cita, no du
 {{-- Button --}}
 
 <x-mail::button :url="$trainingLink">
-    Acceder a la capacitación
+    Acceder al Portal
 </x-mail::button>
 
 
