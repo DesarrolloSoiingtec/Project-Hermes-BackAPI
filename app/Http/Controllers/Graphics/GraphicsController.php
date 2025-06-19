@@ -399,4 +399,52 @@ class GraphicsController extends Controller
             'data' => $formattedData
         ]);
     }
+
+    public function getAgeGrap(Request $request): JsonResponse {
+        log::info("Obteniendo datos para la gráfica de edades", $request->all());
+
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+
+        // Validar que las fechas sean válidas
+        if (!$fechaInicio || !$fechaFin) {
+            return response()->json(['error' => 'Fechas no proporcionadas'], 400);
+        }
+
+        $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
+        $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
+
+        // Buscar registros entre las fechas especificadas
+        $patientCourses = patient_training_course::whereBetween('created_at', [
+            $fechaInicioFormateada,
+            $fechaFinFormateada
+        ])->get();
+
+        // Extraer todos los patient_person_id únicos
+        $patientPersonIds = $patientCourses->pluck('patient_person_id')->unique()->toArray();
+
+        // Obtener las fechas de nacimiento de las personas correspondientes
+        $personsBirthdays = Person::whereIn('id', $patientPersonIds)
+            ->select('id', 'birthday', 'gender')
+            ->get();
+
+        // Calcular la edad en años para cada persona
+        $personsAges = $personsBirthdays->map(function($person) {
+            return [
+                'id' => $person->id,
+                'gender' => $person->gender,
+                'age' => $person->birthday ? Carbon::parse($person->birthday)->age : null
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $personsAges
+        ]);
+    }
+
+    public function getUsersForAgreement(Request $request): JsonResponse {
+        log::info("Obteniendo usuarios para acuerdo", $request->all());
+    }
+
 }

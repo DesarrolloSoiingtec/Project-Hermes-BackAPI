@@ -234,6 +234,8 @@ Route::group([
 ],function($router) {
     Route::get("siau/get/grap/info",[GraphicsController::class,"getGrapInfo"]);
     Route::get("siau/get/reasons/grap/info",[GraphicsController::class,"getReasonsGrap"]);
+    Route::get("siau/age/grap",[GraphicsController::class,"getAgeGrap"]);
+    Route::get("siau/get/users/forAgreement",[GraphicsController::class,"getUsersForAgreement"]);
     Route::get("siau/get/apb/agreement/grap/info",[GraphicsController::class,"getAPBandAgreement"]);
     Route::get("siau/table/grap/info",[GraphicsController::class,"getGrapTable"]);
     Route::get("siau/table/detail/grap",[GraphicsController::class,"getDetailGrap"]);
