@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\StoreStaffRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
 
 
 class StaffController extends Controller
@@ -399,4 +400,163 @@ class StaffController extends Controller
             ], 500);
         }
     }
+
+    public function getProfile(Request $request): JsonResponse {
+        Log::info('Datos del request para obtener perfil:', $request->all());
+
+        $id = $request->id;
+
+        // Buscar la persona por ID
+        $person = Person::find($id);
+
+        // Buscar el usuario por ID
+        $user = User::find($id);
+
+        if (!$person || !$user) {
+            return response()->json([
+                "message" => 404,
+                "message_text" => "No se encontró el perfil solicitado"
+            ], 404);
+        }
+
+        // Buscar información del tipo de documento
+        $documentType = LegalDocumentsType::find($person->legal_document_type_id);
+
+        // Buscar si es un asistente médico
+        $medical = Medical::find($id);
+
+        // Obtener solo los campos específicos
+        $personData = [
+            'legal_document_type_id' => $person->legal_document_type_id,
+            'document_type_name' => $documentType ? $documentType->name : null,
+            'document_number' => $person->document_number,
+            'name' => $person->name,
+            'second_name' => $person->second_name,
+            'lastname' => $person->lastname,
+            'second_lastname' => $person->second_lastname,
+            'phone' => $person->phone,
+            'birthday' => $person->birthday,
+            'gender' => $person->gender
+        ];
+
+        $userData = [
+            'email' => $user->email,
+            'avatar' => $user->avatar
+        ];
+
+        $assistantData = null;
+        if ($medical) {
+            $assistantData = [
+                'medical_record' => $medical->medical_record,
+                'signature' => $medical->signature,
+                'specialties' => $medical->specialties()->pluck('specialty_id')
+            ];
+        }
+
+        Log::info("Perfil encontrado:", [
+            'person' => $personData,
+            'user' => $userData,
+            'assistant' => $assistantData
+        ]);
+
+        return response()->json([
+            "message" => 200,
+            "person" => $personData,
+            "user" => $userData,
+            "assistant" => $assistantData
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse {
+        Log::info("Datos del request para actualizar perfil:", $request->all());
+
+        $id = $request->id;
+
+        try {
+            DB::beginTransaction();
+
+            // Actualizar datos de la persona
+            $person = Person::findOrFail($id);
+            $person->name = $request->name;
+            $person->second_name = $request->second_name;
+            $person->lastname = $request->lastname;
+            $person->second_lastname = $request->second_lastname;
+            $person->phone = $request->phone;
+            $person->document_number = $request->document_number;
+            $person->legal_document_type_id = $request->legal_document_type_id;
+            $person->birthday = $request->birthday;
+            $person->gender = $request->gender;
+            $person->save();
+
+            // Actualizar datos del usuario
+            $user = User::findOrFail($id);
+            $user->email = $request->email;
+
+            // Manejar el archivo de avatar si se proporciona
+            if($request->hasFile("avatar")){
+                if($user->avatar){
+                    Storage::delete($user->avatar);
+                }
+                $path = Storage::putFile("users", $request->file("avatar"));
+                $user->avatar = $path;
+            }
+
+            $user->save();
+
+            DB::commit();
+
+            return response()->json([
+                "message" => 200,
+                "message_text" => "Perfil actualizado correctamente"
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error al actualizar perfil: " . $e->getMessage());
+
+            return response()->json([
+                "message" => 500,
+                "message_text" => "Error al actualizar el perfil: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateProfileCredentials(Request $request): JsonResponse {
+        Log::info("Datos del request para actualizar credenciales:", $request->all());
+
+        $id = $request->id;
+        $currentPassword = $request->current_password;
+        $newPassword = $request->new_password;
+
+        try {
+            // Buscar el usuario
+            $user = User::findOrFail($id);
+
+            // Verificar si la contraseña actual coincide
+            if (!Hash::check($currentPassword, $user->password)) {
+                return response()->json([
+                    "message" => 400,
+                    "message_text" => "La contraseña actual no es correcta"
+                ], 400);
+            }
+
+            // Actualizar la contraseña
+            $user->password = bcrypt($newPassword);
+            $user->save();
+
+            return response()->json([
+                "message" => 200,
+                "message_text" => "Contraseña actualizada correctamente"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar credenciales: " . $e->getMessage());
+
+            return response()->json([
+                "message" => 500,
+                "message_text" => "Error al actualizar credenciales: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

@@ -241,6 +241,16 @@ Route::group([
     Route::get("siau/table/detail/grap",[GraphicsController::class,"getDetailGrap"]);
 });
 
+// Rutas para perfil
+Route::group([
+    'prefix' => 'f06ac5c5-6c45-480d-9f0b-fbc7cb8c8d93',
+    'middleware' => ['auth:api']
+],function($router) {
+    Route::get("get/profile",[StaffController::class,"getProfile"]);
+    Route::post("update/profile",[StaffController::class,"updateProfile"]);
+    Route::post("update/profile/credentials",[StaffController::class,"updateProfileCredentials"]);
+});
+
 // ========================================================>>
 // Rutas libres de autenticación
 // ========================================================>>

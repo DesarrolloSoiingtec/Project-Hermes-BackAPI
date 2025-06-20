@@ -291,11 +291,14 @@ class GraphicsController extends Controller
         $fechaInicioFormateada = Carbon::parse($fechaInicio)->format('Y-m-d 00:00:00');
         $fechaFinFormateada = Carbon::parse($fechaFin)->format('Y-m-d 23:59:59');
 
+        // Si sedeId es '%', llamar a la función privada
+        if ($sedeId === '%') {
+            return $this->procesarTodasLasSedes($fechaInicioFormateada, $fechaFinFormateada);
+        }
+
         // Consulta agrupando por service_id y branch_id
         $query = patient_training_course::whereBetween('created_at', [$fechaInicioFormateada, $fechaFinFormateada]);
-        if ($sedeId !== '%') {
-            $query->where('branch_id', $sedeId);
-        }
+        $query->where('branch_id', $sedeId);
 
         $resultados = $query->select('service_id', 'branch_id', DB::raw('COUNT(*) as total'))
             ->groupBy('service_id', 'branch_id')
@@ -306,7 +309,7 @@ class GraphicsController extends Controller
 
         // Obtener info de servicios y sedes
         $servicios = Service::whereIn('id', $serviciosIds)
-            ->with('conceptService') // Asumiendo relación en el modelo Service
+            ->with('conceptService')
             ->get()
             ->keyBy('id');
 
@@ -323,6 +326,48 @@ class GraphicsController extends Controller
                 'concept_service_name' => $servicio && $servicio->conceptService ? $servicio->conceptService->name : 'Sin concepto',
                 'branch_id' => $branch ? $branch->id : null,
                 'branch_name' => $branch ? $branch->name : 'Sin sede',
+                'total' => $item->total
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $datosFormateados
+        ]);
+    }
+
+    private function procesarTodasLasSedes(string $fechaInicio, string $fechaFin): JsonResponse {
+        // Consulta para todas las sedes
+        $query = patient_training_course::whereBetween('created_at', [$fechaInicio, $fechaFin]);
+
+        $resultados = $query->select('service_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('service_id')
+            ->get();
+
+        log::info("Resultados obtenidos para todas las sedes:", ['resultados' => $resultados]);
+
+        $serviciosIds = $resultados->pluck('service_id')->unique()->toArray();
+        $branchIds = $resultados->pluck('branch_id')->unique()->toArray();
+
+        // Obtener info de servicios y sedes
+        $servicios = Service::whereIn('id', $serviciosIds)
+            ->with('conceptService')
+            ->get()
+            ->keyBy('id');
+
+        $branches = Branch::whereIn('id', $branchIds)->get()->keyBy('id');
+
+        // Formatear resultados
+        $datosFormateados = $resultados->map(function($item) use ($servicios, $branches) {
+            $servicio = $servicios[$item->service_id] ?? null;
+            $branch = $branches[$item->branch_id] ?? null;
+            return [
+                'service_cups' => $servicio ? $servicio->cups : 'Sin CUPS',
+                'service_name' => $servicio ? $servicio->name : 'Servicio sin nombre',
+                'concept_service_id' => $servicio ? $servicio->concept_service_id : null,
+                'concept_service_name' => $servicio && $servicio->conceptService ? $servicio->conceptService->name : 'Sin concepto',
+                'branch_id' => $branch ? $branch->id : null,
+                'branch_name' => $branch ? $branch->name : 'Todas',
                 'total' => $item->total
             ];
         });
@@ -446,5 +491,4 @@ class GraphicsController extends Controller
     public function getUsersForAgreement(Request $request): JsonResponse {
         log::info("Obteniendo usuarios para acuerdo", $request->all());
     }
-
 }
