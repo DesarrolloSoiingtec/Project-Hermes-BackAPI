@@ -10,6 +10,7 @@ use App\Http\Controllers\Others\CountryController;
 use App\Http\Controllers\Others\ServiceController;
 use App\Http\Controllers\Others\SpecialtyController;
 use App\Http\Controllers\Siau\SiauController;
+use App\Http\Controllers\Siau\BlockUsers;
 use App\Http\Controllers\APB\APBController;
 use App\Http\Controllers\unauthenticated\NotAuth_DocumentController;
 use App\Http\Controllers\unauthenticated\NotAuth_ValidationController;
@@ -94,6 +95,8 @@ Route::group([
     Route::post("siau/edit/users",[SiauController::class,"editUser"]);
     Route::get("siau/get/agreements/patient",[SiauController::class,"getAgreementsPatient"]);
 
+    Route::post("siau/create/users/block",[BlockUsers::class,"createUserBlock"]);
+
     Route::post("siau/send/mail",[SiauController::class,'sendMail'])
     ->middleware('throttle:10,1'); // 10 requests por minuto
 });
@@ -103,8 +106,10 @@ Route::group([
     'middleware' => ['auth:api']
 ],function($router) {
     Route::get("get/medical/from-specialties",[SiauController::class,"getMedicalFromSpecialties"]);
-
     Route::get("get/medical/nameFromUser",[SiauController::class,"getMedicalName"]);
+    Route::get("get/medical/information",[StaffController::class,"getMedicalInformation"]);
+    Route::post("siau/create/profesional/user",[StaffController::class,"createMedicalUser"]);
+    Route::post("siau/update/profesional/info",[StaffController::class,"updateMedicalInfo"]);
 });
 
 // Rutas para crear especialidades médicas
@@ -133,6 +138,7 @@ Route::group([
     Route::post("create/agreement",[APBController::class,"createAgreement"]);
     Route::post("delete/agreement",[APBController::class,"deleteAgreement"]);
     Route::get("get/agreements",[APBController::class,"getAgreements"]);
+    Route::get("get/agreements/fromAPB",[APBController::class,"getAgreementFromAPB"]);
 
     Route::get("get/apb/fromAgreementUser",[APBController::class,"getApbFromAgreement"]);
 });

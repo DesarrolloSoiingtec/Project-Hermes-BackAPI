@@ -206,5 +206,26 @@ class APBController extends Controller
         ], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
     }
 
+    public function getAgreementFromAPB(Request $request): JsonResponse
+    {
+        Log::info("id de getAgreementFromAPB:", $request->all());
+
+        // Validar que exista el APB ID
+        $request->validate([
+            'apb_id' => 'required|exists:apb,id'
+        ]);
+
+        // Buscar todos los convenios activos asociados a ese APB
+        $agreements = Agreement::where('apb_id', $request->apb_id)
+                              ->where('is_active', true)
+                              ->select('id', 'name')
+                              ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $agreements
+        ], Response::HTTP_OK);
+    }
+
 }
 

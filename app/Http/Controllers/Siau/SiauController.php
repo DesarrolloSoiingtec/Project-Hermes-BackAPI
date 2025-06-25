@@ -272,7 +272,7 @@ class SiauController extends Controller
         Mail::to($person->email_patient)
             ->send(new ReminderMail($person, $patient, $agreementPatient, $trainingCourse, $trainingLink, $appointmentDate, $hour_appointment));
 
-        Log::info("Recordatorio de capacitación enviado a {$person->email_patient}");
+        Log::info("Recordatorio de capacitación enviado");
     }
 
 // ===================================================================================== >>

@@ -39,4 +39,11 @@ class Person extends Model
     {
         return $this->hasOne(\App\Models\Siau\Patient::class, 'id', 'id');
     }
+    public function medical()
+    {
+        return $this->hasOne(\App\Models\Auth\Medical::class, 'id', 'id');
+    }
+
 }
+
+

@@ -19,4 +19,9 @@ class Medical extends Model
         // Cambiamos la relación para usar 'id' en lugar de 'person_id'
         return $this->belongsTo(\App\Models\Auth\Person::class, 'id', 'id');
     }
+
+    public function specialties()
+    {
+        return $this->hasMany(\App\Models\Other\MedicalSpecialty::class, 'medical_id', 'id');
+    }
 }

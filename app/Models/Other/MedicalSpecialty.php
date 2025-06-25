@@ -21,6 +21,6 @@ class MedicalSpecialty extends Model
 
     public function specialty()
     {
-        return $this->belongsTo(\App\Models\Specialty::class, 'specialty_id');
+        return $this->belongsTo(\App\Models\Other\Specialty::class, 'specialty_id');
     }
 }

@@ -48,6 +48,110 @@ class StaffController extends Controller
         ]);
     }
 
+    public function getMedicalInformation(Request $request){
+        $medicals = Medical::with(['specialties.specialty'])->get();
+
+        $data = $medicals->map(function($medical) {
+            return [
+                'id' => $medical->id,
+                'medical_record' => $medical->medical_record,
+                'signature' => $medical->signature,
+                'specialties' => $medical->specialties->map(function($ms) {
+                    return $ms->specialty ? $ms->specialty->name : null;
+                })->filter()->values(),
+            ];
+        });
+
+        return response()->json([
+            'message' => 200,
+            'data' => $data
+        ]);
+    }
+
+    public function updateMedicalInfo(Request $request)
+    {
+        Log::info("Datos del request para actualizar información médica:", $request->all());
+
+        $medical = Medical::findOrFail($request->user_id);
+
+        // Actualizar medical_record
+        $medical->medical_record = $request->medical_record;
+
+        // Actualizar firma si viene en el request
+        if ($request->hasFile('signature')) {
+            // Eliminar firma anterior si existe
+            if ($medical->signature) {
+                Storage::disk('public')->delete($medical->signature);
+            }
+            // Guardar nueva firma con UUID
+            $file = $request->file('signature');
+            $filename = 'signature/' . \Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('signature', $filename, 'public');
+            $medical->signature = $path;
+        }
+
+        $medical->save();
+
+        // Sincronizar especialidades
+        $specialtiesRequest = json_decode($request->specialties, true);
+        $currentSpecialties = MedicalSpecialty::where('medical_id', $medical->id)->pluck('specialty_id')->toArray();
+
+        // Añadir nuevas especialidades
+        $toAdd = array_diff($specialtiesRequest, $currentSpecialties);
+        foreach ($toAdd as $specialtyId) {
+            MedicalSpecialty::create([
+                'medical_id' => $medical->id,
+                'specialty_id' => $specialtyId,
+            ]);
+        }
+
+        // Eliminar especialidades que ya no están
+        $toDelete = array_diff($currentSpecialties, $specialtiesRequest);
+        MedicalSpecialty::where('medical_id', $medical->id)
+            ->whereIn('specialty_id', $toDelete)
+            ->delete();
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'Información médica actualizada correctamente'
+        ]);
+    }
+
+    public function createMedicalUser(Request $request)
+    {
+        Log::info("createMedicalUser", $request->all());
+
+        // Crear nuevo registro médico
+        $medical = new Medical();
+        $medical->id = $request->user_id;
+        $medical->medical_record = $request->medical_record;
+
+        // Guardar la firma con UUID
+        if ($request->hasFile('signature')) {
+            $file = $request->file('signature');
+            $filename = \Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('signature', $filename, 'public');
+            $medical->signature = $path;
+        }
+
+        $medical->save();
+
+        // Crear especialidades
+        $specialties = json_decode($request->specialties, true);
+        foreach ($specialties as $specialtyId) {
+            MedicalSpecialty::create([
+                'medical_id' => $medical->id,
+                'specialty_id' => $specialtyId,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'Usuario médico creado correctamente'
+        ]);
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
