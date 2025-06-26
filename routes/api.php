@@ -72,6 +72,8 @@ Route::group([
     Route::get("economic/activity",[CompanyController::class,"getEconomicActivity"]);
     Route::get("economic/activity/ciuu/codes",[CompanyController::class,"getCodesOfActivity"]);
     Route::post("create/company",[CompanyController::class,"createCompany"]);
+    Route::get("get/company",[CompanyController::class,"getCompany"]);
+    Route::post("update/company",[CompanyController::class,"updateCompany"]);
 
 });
 

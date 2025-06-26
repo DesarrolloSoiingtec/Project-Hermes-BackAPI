@@ -4,18 +4,23 @@ namespace App\Models\Other;
 
 use Illuminate\Database\Eloquent\Model;
 
+
 class Company extends Model
 {
     protected $table = 'companies';
 
+    protected $casts = [
+        'economic_activities' => 'array',
+    ];
+
     protected $fillable = [
         'name',
         'legal_name',
-        'nit',
-        'company_type',
+        'id_number',
+        'verification_digit',
+        'company_type_id', // <- Asegúrate de que esté aquí
         'legal_representative',
         'incorporation_date',
-        'economic_activity',
         'street',
         'exterior_number',
         'interior_number',
@@ -31,7 +36,11 @@ class Company extends Model
         'user_contact_phone',
         'user_prefix_phone',
         'user_contact_email',
-        'registration_number',
-        'verification_digit'
+        'registration_number'
     ];
+
+    public function companyType()
+    {
+        return $this->belongsTo(\App\Models\Other\LegalDocumentsType::class, 'company_type_id');
+    }
 }
