@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Exception;
 
+// test, primero commit
 /**
- * Controlador para envío de emails usando Maileroo API como prioridad 
+ * Controlador para envío de emails usando Maileroo API como prioridad
  * y SMTP como fallback
  */
 class SendMailController extends Controller
@@ -21,7 +22,7 @@ class SendMailController extends Controller
      * Método principal para envío de correos electrónicos
      * Maneja tanto FormData con payload JSON como requests JSON directos
      * Prioriza Maileroo API, fallback a SMTP
-     * 
+     *
      * @param Request $request - Request HTTP con datos del email
      * @return JsonResponse - Respuesta JSON con estado del envío
      */
@@ -40,10 +41,10 @@ class SendMailController extends Controller
         // Laravel puede recibir datos de dos formas principales:
         // 1. Como FormData con un campo 'payload' que contiene JSON
         // 2. Como request JSON directo
-        
+
         // CASO A: FormData con campo 'payload' que contiene JSON string
         if ($request->has('payload') && is_string($request->input('payload'))) {
-            // Cuando el frontend envía FormData + archivos, los datos JSON 
+            // Cuando el frontend envía FormData + archivos, los datos JSON
             // van en un campo llamado 'payload' como string
             try {
                 // Decodificar el JSON string a array asociativo PHP
