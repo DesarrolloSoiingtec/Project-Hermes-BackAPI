@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('persons', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('legal_document_type_id'); // ID de la actividad económica
-            $table->foreign('legal_document_type_id')->references('id')->on('legal_documents_types');
-
+            $table->string('legal_document_type_id');
             $table->string('document_number', 30); // Número de documento
             $table->string('email_patient', 60)->nullable(); // correo del paciente (opcional)
             $table->string('name', 80); // Primer nombre

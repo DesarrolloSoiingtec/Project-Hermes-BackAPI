@@ -61,13 +61,6 @@ class AuthController extends Controller
         // Obtener el usuario autenticado
         $user = auth()->user();
 
-        SystemLog::create([
-            'user_id' => $user->id,
-            'guard_name' => 'login',
-            'action' => 'login',
-            'description' => 'Authenticated in the system',
-        ]);
-
         return $this->respondWithToken($token);
     }
 
