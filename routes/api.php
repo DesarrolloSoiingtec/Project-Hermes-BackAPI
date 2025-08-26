@@ -18,6 +18,10 @@ use App\Http\Controllers\Graphics\GraphicsController;
 use App\Http\Controllers\Maileroo\MailerooController;
 use App\Http\Controllers\Maileroo\RecipientController;
 use App\Http\Controllers\Maileroo\SendMailController;
+use App\Http\Controllers\Maileroo\IAController;
+use App\Http\Controllers\Maileroo\TokenController;
+use App\Http\Controllers\Maileroo\GetMailController;
+
 
 // ========================================================>>
 // Rutas Maileroo
@@ -26,7 +30,7 @@ use App\Http\Controllers\Maileroo\SendMailController;
 Route::group([
     'prefix' => 'fc849aae-4304-40d5-9744-28b08023961b',
 ], function () {
-    Route::post('webhook/email-events', [MailerooController::class, 'newEvent']);
+    Route::post('webhook/email-events', [MailerooController::class, 'handleIncomingRequest']);
 });
 
 Route::group([
@@ -36,12 +40,42 @@ Route::group([
     Route::get('dashboard/data', [RecipientController::class, 'getDashboardData']);
 });
 
+// rutas para enviar correos
 Route::group([
     'prefix' => '09c87545-e7b9-4358-9110-18865b02e5db',
 ], function () {
     Route::post('send/mail', [SendMailController::class, 'sendMail']);
 });
 
+// Rutas para interacturar con la IA
+Route::group([
+    'prefix' => '0fdd97fa-8296-4324-913e-31bc2d21e4b4',
+], function () {
+    Route::get('IA/write', [IAController::class, 'IAwrite']);
+    Route::get('IA/translate', [IAController::class, 'translate']);
+    Route::post('IA/correct', [IAController::class, 'correct']);
+    Route::post('IA/improve', [IAController::class, 'improve']);
+});
+
+// Rutas para estadísticas de tokens y uso de herramientas IA
+Route::group([
+    'prefix' => 'e3f7b8a9-c2d5-4a1e-8f6b-1c9e7a3b5d2f',
+], function () {
+    Route::post('tokens/record', [TokenController::class, 'recordUsage']);
+    Route::get('tokens/stats', [TokenController::class, 'getStats']);
+    Route::get('tokens/stats/{tool}', [TokenController::class, 'getToolStats']);
+    Route::get('tokens/totals', [TokenController::class, 'getTotals']);
+    Route::get('tokens/export', [TokenController::class, 'exportStats']);
+    Route::delete('tokens/reset', [TokenController::class, 'resetStats']);
+});
+
+// Rutas para obtener la información sobre los correos
+Route::group([
+    'prefix' => '3b663339-d1e5-43bc-a3a4-f12cbefb2d27',
+], function () {
+    Route::get('get/emails', [GetMailController::class, 'getEmails']);
+    Route::get('get/emailOnly/{emailId}', [GetMailController::class, 'getEmailOnly']);
+});
 
 // ========================================================>>
 // Rutas Aplicativo
